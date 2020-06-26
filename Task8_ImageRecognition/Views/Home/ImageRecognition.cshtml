@@ -1,0 +1,101 @@
+﻿
+@{
+    ViewData["Title"] = "ImageRecognition";
+}
+
+<h2>Image Recognition</h2>
+<form onsubmit="submitImage()" enctype="multipart/form-data" method="post" id="form" name="form">
+    <input type="file" name="file" id="file">
+    <div class="image-preview" id="imagePreview">
+        <img src="" alt="Image Preview" class="image-preview-image">
+        <span class="image-preview-defaultText">Image Preview</span>
+    </div>
+    <br>
+    <button id="submitBtn" name="submitBtn" type="submit">Submit</button>
+</form>
+<br>
+<h5 id="label"></h5>
+<h5 id="text"></h5>
+<style>
+    .image-preview{
+        width:300px;
+        min-height:100px;
+        border: 2px solid #808080;
+        margin-top:15px;
+
+        display:flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #cccccc;
+    }
+
+    .image-preview-image{
+        display:none;
+        width:100%;
+    }
+</style>
+<script src="js/jquery.min.js"></script>
+<script>
+    const file = document.getElementById("file");
+    const previewContainer = document.getElementById("imagePreview");
+    const previewImage = previewContainer.querySelector(".image-preview-image");
+    const previewDefaultText = previewContainer.querySelector(".image-preview-defaultText");
+
+    file.addEventListener("change", function () {
+        const imageFile = this.files[0];
+        if (imageFile) {
+            const reader = new FileReader();
+            previewDefaultText.style.display = "none";
+            previewImage.style.display = "block";
+
+            reader.addEventListener("load", function () {
+                previewImage.setAttribute("src", this.result);
+            })
+
+            reader.readAsDataURL(imageFile);
+        } else {
+            previewDefaultText.style.display = null;
+            previewImage.style.display = null;
+            previewImage.setAttribute("src", "");
+        }
+    });
+
+    function submitImage() {
+        event.preventDefault();
+        var fileInput = document.getElementById('file');
+        var file = fileInput.files[0];
+        var formData = new FormData();
+        formData.append('file', file);
+        $.ajax({
+            url: '/api/ImageRecognition/ScanImage',
+            method: 'POST',
+            processData: false,
+            contentType: false,
+            async: false,
+            data: formData,
+            success: function (data) {
+                var obj = JSON.parse(data);
+                if (obj.Label.includes("receipt")) {
+                    document.getElementById("label").innerHTML = obj.Label;
+                } else if (obj.Label.includes("No related")) {
+                    document.getElementById("label").innerHTML = obj.Label;
+                } else {
+                    document.getElementById("label").innerHTML = "Related labels detected: " + obj.Label;
+                }
+                if (obj.Text.includes("cost")) {
+                    document.getElementById("text").innerHTML = obj.Text;
+                } else if (obj.Text.includes("No texts")) {
+                    document.getElementById("text").innerHTML = obj.Text;
+                } else {
+                    document.getElementById("text").innerHTML = "Scanned texts: " + obj.Text;
+                }
+            },
+            error: function () {
+                alert("Error");
+            }
+        });
+    }
+</script>
+
+
